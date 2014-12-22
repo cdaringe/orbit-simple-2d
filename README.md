@@ -1,4 +1,6 @@
 # orbit simple 2d
+<img src="https://raw.githubusercontent.com/cdaringe/orbit-simple-2d/master/img/orbit_low_res.gif" height="250" width="250" >
+
 creates a series of nodes to perform a circular orbit.  each node lives in its own self contained canvas element, and can be configured with various orbital properties.  see example for full property disclosure.
 
 1. create a `<canvas id="orbitter">`
