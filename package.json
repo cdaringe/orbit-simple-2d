@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "paints nodes on an html canvas, spins them out to a constant orbit, and re-collapses them",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdaringe/orbit-simple-2d"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
