@@ -1,6 +1,6 @@
 {
   "name": "orbit-simple-2d",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "paints nodes on an html canvas, spins them out to a constant orbit, and re-collapses them",
   "main": "index.js",
   "repository": {

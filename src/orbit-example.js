@@ -12,7 +12,7 @@ domready(function () {
             t: 30                   // rpm
         },
         timeToOrbit: 1000,          // time to orbit radius & theta alignment, ms (not really a sp)
-        timeToHome: 8000,
+        timeToHome: 1500,
         nodes: [
             {
                 id: 1,
@@ -53,7 +53,7 @@ domready(function () {
                     t: Math.PI
                 },
                 orbitPos: {
-                    r: 30,
+                    r: 20,
                     t: Math.PI
                 },
                 style: {
@@ -67,13 +67,14 @@ domready(function () {
                     t: Math.PI
                 },
                 orbitPos: {
-                    r: 70,
+                    r: 65,
                     t: 2*Math.PI/3
                 },
                 style: {
                     radius: 20,
                     color: 'blue'
-                }
+                },
+                dir: -1
             }, {
                 id: 5,
                 pos :{

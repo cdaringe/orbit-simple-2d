@@ -16,7 +16,7 @@ var orbitter = new Orbit({
         t: 30                   // theta, *rpm*
     },
     timeToOrbit: 1000,          // time to orbit radius & theta alignment, ms
-    timeToHome:  1000,          // time to home from orbit, ms (defaults to timeToOrbit value)
+    timeToHome:  1000,          // time to home from orbit, ms (defaults to timeToOrbit val)
     nodes: [
         {
             id: 1,
@@ -103,3 +103,7 @@ The final js is placed in `build/`.  Open the index.html file to preview.
 
 ## ToDo
 1. rather than refreshing at a fixed 50/60 Hz, self adjust per browser performance
+
+## Thanks
+
+1. handy gif tutorial: [Chris Messina](http://chrismessina.me/b/13913393/mov-to-gif)
