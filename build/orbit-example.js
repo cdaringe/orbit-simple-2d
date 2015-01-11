@@ -1,4 +1,4 @@
-;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /*!
   * domready (c) Dustin Diaz 2014 - License MIT
   */
@@ -1810,6 +1810,19 @@
 }.call(this));
 
 },{}],4:[function(require,module,exports){
+/*
+ * internal, node-level:
+ * isOrbit : Boolean if object is travelling on orbit path
+ * isHome: Boolean if object is homed
+ * pos.home.x/y/r/t : Number px & angle dims of home pos
+ * pos.x, pos.y : Number px values in ref to (0,0) center of primary canvas
+ * dir : -1 ccw, 1 cw, regardless of what they teach you in HS trig
+ * radius: Number px diamter of orbiting body
+ * style: color
+ *
+ * internal, sys-level:
+ * radiansPerSecond/radiansPerMs : orbital speed
+ */
 (function (undefined) {
 "use strict";
 
@@ -1827,7 +1840,11 @@ function Body(config) {
         throw new Error("an orbit body/node requires a canvas and canvas context");
     }
 
-    // compute init vals
+    if (!_.isNumber(this.timeToOrbit)) {
+        throw new Error("timeToOrbit invalid number");
+    }
+
+    // compute initial state
     // set defaults, override with provided config
     this.center = {
         x: this.canvas.width/2,
@@ -1838,18 +1855,15 @@ function Body(config) {
     this.radiansPerMs = this.radiansPerSecond / 1000;    // calculate dTheata/dT (ms)
 
     this.initialThetaOffset = this.orbitPos.t - this.pos.t;
-    this.thetaAlignDifferentialRate = this.initialThetaOffset / this.timeToOrbit; // radian/ms
-
-    this.radiusTraverseRate = (this.orbitPos.r - this.pos.r) / this.timeToOrbit;
 
     this.pos.x = 0;
     this.pos.y = 0;
 
     if (this.dir < 0) {
-        // orbit ccw
+        // orbit cw
         this.dir = -1;
     } else {
-        // orbit cw
+        // orbit ccw
         this.dir = 1;
     }
 
@@ -1862,7 +1876,9 @@ function Body(config) {
     };
 
     this.ctx.fillStyle = randomColor();
+
     this.radius = 5;
+
     if (config.style) {
         var style = config.style;
         this.ctx.fillStyle = style.color || this.ctx.fillStyle;
@@ -1882,6 +1898,7 @@ function Body(config) {
     } else {
         this.orbitInward = false;
     }
+    this.isHome = true;
 }
 
 Body.prototype.draw = function() {
@@ -1901,12 +1918,19 @@ Body.prototype.updateCartesian = function() {
 
 Body.prototype.home = function() {
     var self = this;
-    if (this.inOrbit) {
-        this.inOrbit = false;
+    this.radiusTraverseRate = (this.pos.home.r - this.pos.r) / this.timeToHome;
+    this.radsToHome = this.pos.home.t - this.pos.t;
+    if (this.radsToHome < 0 && this.dir) {
+        this.radsToHome += twoPi;
+    } else if (this.radsToHome > 0 && !this.dir) {
+        this.radsToHome -= twoPi;
     }
+    this.isOrbit = false;
     if (this.tickOrbitInterval) {
         clearInterval(this.tickOrbitInterval);
     }
+    this.thetaAligned = false;
+    this.ticksTilThetaAligned = null;
     this.tickHomeInterval = setInterval(
         function() {
             self.tickHome();
@@ -1921,6 +1945,9 @@ Body.prototype.handleHomed = function() {
 
 Body.prototype.orbit = function() {
     var self = this;
+    this.isHome = false;
+    this.thetaAlignDifferentialRate = this.initialThetaOffset / this.timeToOrbit; // radian/ms
+    this.radiusTraverseRate = (this.orbitPos.r - this.pos.r) / this.timeToOrbit;
     this.tickOrbitInterval = setInterval(
         function() {
             self.tickOrbit();
@@ -1941,17 +1968,49 @@ Body.prototype.tickOrbit = function() {
     this.draw();
 };
 Body.prototype.tickHome = function() {
-    if (this.thetaAlignDifferentialRate) {
-        // TODO BROKEN
-        // orbit and home thetas weren't aligned to start, so
-        // adjust the return orbit
-        this.thetaAligned = false;
-        delete this.ticksTilThetaAligned;
-        this.initialThetaOffset = -this.initialThetaOffset;
+    if (this.thetaAligned && this.radiusHome) {
+        this.isHome = true;
+        this.handleHomed();
     }
-    this.tickThetaOrbit();  // orbit all the way home
+    this.tickThetaHome();  // orbit all the way home
     this.tickRadiusHome();
     this.draw();
+};
+
+
+Body.prototype.tickThetaHome = function() {
+    // add additional theta swept in this cycle,t*r=d;
+    // note: if start theta and orbit theta are not aligned, the body
+    // must speed up or slow down from it's standard speed in order to match
+    // its relative destination theta in orbit
+    if (this.thetaAligned) {
+        return;
+    } else {
+        if (!this.ticksTilThetaAligned) {
+            this.ticksTilThetaAligned = refreshRate * this.timeToHome/1000;
+            this.thetaHomeRate = this.radsToHome/this.timeToHome;
+            if (Math.floor(this.ticksTilThetaAligned) !== this.ticksTilThetaAligned) {
+                // because a non-int version of ticks is required to align start
+                // and home thetas, we must reach our destination theta faster than planned!
+                if (Math.floor(this.ticksTilThetaAligned <= 1)) {
+                    // handle fringe case where there's hardly any animation (1 frame)
+                    this.pos.t = this.orbitPos.t;
+                } else {
+                    // recompute updated, faster/slower differential sweep rate
+                    this.ticksTilThetaAligned = Math.floor(this.ticksTilThetaAligned);
+                    this.timeToHome = this.ticksTilThetaAligned / (refreshRate/1000);
+                    this.thetaHomeRate = this.radsToHome/this.timeToHome;
+                }
+            }
+        }
+
+        // update theta at adjusted rate to catch the desired target orbit theta.
+        this.pos.t += refreshDur * this.dir * (this.thetaHomeRate); // add additional theta swept
+        --this.ticksTilThetaAligned;
+        if (!this.ticksTilThetaAligned) {
+            this.thetaAligned = true;
+        }
+    }
 };
 
 
@@ -1996,45 +2055,39 @@ Body.prototype.tickThetaOrbit = function() {
 };
 
 Body.prototype.tickRadiusOrbit = function() {
-    if (!this.inOrbit) {
+    if (!this.isOrbit) {
         this.pos.r += refreshDur * this.radiusTraverseRate;
         if (!this.orbitInward) {
             // permit radial position to grow outwards, max at orbit radius
             if (this.pos.r > this.orbitPos.r) {
                 this.pos.r = this.orbitPos.r;
-                this.inOrbit = true;
+                this.isOrbit = true;
             }
         } else {
             // permit radial position to shrink outwards, min at orbit radius
             if (this.pos.r < this.orbitPos.r) {
                 this.pos.r = this.orbitPos.r;
-                this.inOrbit = true;
+                this.isOrbit = true;
             }
         }
     }
 };
 
 Body.prototype.tickRadiusHome = function() {
-    this.pos.r -= refreshDur * this.radiusTraverseRate;
+    this.pos.r += refreshDur * this.radiusTraverseRate;
     if (!this.orbitInward) {
         // if outer orbit, permit the node to come inward
         if (this.pos.r < this.pos.home.r) {
             // if you've made it home, stay home and disable animation
             this.pos.r = this.pos.home.r;
-            this.home = true;
-            if (this.tickHomeInterval) {
-                clearInterval(this.tickHomeInterval);
-            }
+            this.radiusHome = true;
         }
     } else {
         // if inner orbit, permit the node to return outward
         if (this.pos.r > this.pos.home.r) {
             // if you've made it home, stay home and disable animation
             this.pos.r = this.pos.home.r;
-            this.home = true;
-            if (this.tickHomeInterval) {
-                clearInterval(this.tickHomeInterval);
-            }
+            this.radiusHome = true;
         }
     }
 
@@ -2057,24 +2110,25 @@ domready(function () {
     var orbitter = new Orbit({
         debug: true,
         id: "orbitter",
-        size: [350, 350],
+        size: [400, 400],
         speed: {
             t: 30                   // rpm
         },
         timeToOrbit: 1000,          // time to orbit radius & theta alignment, ms (not really a sp)
+        timeToHome: 8000,
         nodes: [
             {
                 id: 1,
                 pos: {              // initial position!
-                    r: 0,           // radial, px
-                    t: 0            // theta, radians
+                    r: 50,          // radial, px
+                    t: Math.PI/4    // theta, radians
                 },
                 orbitPos: {         // initial position at orbit
-                    r: 150,         // radial, px
-                    t: 0            // theta *offset* from theta position, radians
+                    r: 100,         // radial, px
+                    t: Math.PI/1.1  // theta *offset* from theta position, radians
                 },
                 speed: {
-                    t: 2            // theta, rpm (overrides default from above)
+                    t: 4            // theta, rpm (overrides default from above)
                 },
                 style: {
                     radius: 15,
@@ -2088,11 +2142,11 @@ domready(function () {
                     t: Math.PI
                 },
                 orbitPos: {      // position at orbit
-                    r: 40,
-                    t: Math.PI/2 // theta in reference to other nodes at same speed
+                    r: 150,
+                    t: 3*Math.PI/2 // theta in reference to other nodes at same speed
                 },
                 style: {
-                    radius: 20,
+                    radius: 30,
                     color: 'green'
                 }
             }, {
@@ -2102,26 +2156,55 @@ domready(function () {
                     t: Math.PI
                 },
                 orbitPos: {
-                    r: 40,
+                    r: 30,
                     t: Math.PI
                 },
                 style: {
                     radius: 20,
                     color: 'pink'
                 }
-            } ,{
+            }, {
                 id: 4,
                 pos :{
                     r: 0,
                     t: Math.PI
                 },
                 orbitPos: {
-                    r: 100,
+                    r: 70,
                     t: 2*Math.PI/3
                 },
                 style: {
                     radius: 20,
                     color: 'blue'
+                }
+            }, {
+                id: 5,
+                pos :{
+                    r: 80,
+                    t: Math.PI/4
+                },
+                orbitPos: {
+                    r: 90,
+                    t: Math.PI/4
+                },
+                style: {
+                    radius: 8,
+                    color: 'chocolate'
+                }
+            },
+            {
+                id: 6,
+                pos :{
+                    r: 100,
+                    t: Math.PI/4
+                },
+                orbitPos: {
+                    r: 90,
+                    t: Math.PI/4 + 0.3
+                },
+                style: {
+                    radius: 8,
+                    color: 'coral'
                 }
             }
         ]
@@ -2146,6 +2229,7 @@ var Body = require('./orbit-body');
 
 function Orbit(config) {
     var self = this;
+    var nodeIds = [];
     if (config.debug) {
         window.orbitter = this;
     }
@@ -2162,24 +2246,30 @@ function Orbit(config) {
     this.el.height = this.size[1];
     this.el.style.position = "relative";
 
-    _.each(this.nodes, function createNodeIsoCanvas(node, key, arr) {
+    _.each(this.nodes, function createNodeIsolatedCanvas(node, key, arr) {
         // Initialize orbitter node core
         node.id = node.id || key;
+        nodeIds.push(node.id);
         node.parent = self;
         node.timeToOrbit = node.timeToOrbit || self.timeToOrbit;
+        node.timeToHome = node.timeToHome || self.timeToHome || node.timeToOrbit;
         node.speed = node.speed || node.parent.speed;
         node.canvas = window.document.createElement('canvas');
         node.canvas.width = self.el.width;
         node.canvas.height = self.el.height;
         node.canvas.style.position = "absolute";
         node.canvas.style.left = 0;
-        node.canvas.id = 'orbit_simple_canvas_' + node.id;
+        node.canvas.id = 'orbit_simple_canvas_' + window.encodeURIComponent(node.id);
         node.ctx = node.canvas.getContext("2d");
         arr[key] = node = Body.extend(node);
         self.el.appendChild(node.canvas);
         node.draw();
     });
 
+    // Ensure node ids unique
+    if (nodeIds.length !== _.unique(nodeIds).length) {
+        throw new Error('Duplicate node IDs detected');
+    }
 }
 
 Orbit.prototype.homeAll = function() {
@@ -2198,5 +2288,4 @@ Orbit.prototype.orbitAll = function() {
 module.exports = Orbit;
 
 })();
-},{"./orbit-body":4,"underscore":3}]},{},[5])
-;
+},{"./orbit-body":4,"underscore":3}]},{},[5]);

@@ -16,6 +16,7 @@ var orbitter = new Orbit({
         t: 30                   // theta, *rpm*
     },
     timeToOrbit: 1000,          // time to orbit radius & theta alignment, ms
+    timeToHome:  1000,          // time to home from orbit, ms (defaults to timeToOrbit value)
     nodes: [
         {
             id: 1,
@@ -34,7 +35,7 @@ var orbitter = new Orbit({
                 radius: 15,
                 color: 'red'
             },
-            dir: -1             // ccw
+            dir: -1             // clockwise
         }
         , {
             id: 2,
@@ -101,6 +102,4 @@ To build your own, consult `src/orbit-example.js`.  Use any normal commonJs buil
 The final js is placed in `build/`.  Open the index.html file to preview.
 
 ## ToDo
-
-1. home to actual theta home :$
-1. rather than refreshing at a fixed 50 Hz, self adjust per browser performance
+1. rather than refreshing at a fixed 50/60 Hz, self adjust per browser performance

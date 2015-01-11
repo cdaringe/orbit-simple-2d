@@ -1,6 +1,6 @@
 {
   "name": "orbit-simple-2d",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "paints nodes on an html canvas, spins them out to a constant orbit, and re-collapses them",
   "main": "index.js",
   "repository": {
@@ -11,14 +11,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "cdaringe",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-cli": "^0.1.13",
     "grunt-contrib-watch": "^0.6.1",
-    "grunt-watchify": "^0.1.0",
-    "httpster": "^1.0.0",
-    "watchify": "^2.2.1"
+    "grunt-browserify": "*",
+    "httpster": "^1.0.0"
   },
   "dependencies": {
     "domready": "^1.0.7",
