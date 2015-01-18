@@ -1,6 +1,7 @@
 (function (undefined) {
 "use strict";
 
+var root = this, exports = {};
 var _ = require('underscore');
 var Body = require('./orbit-body');
 
@@ -16,6 +17,13 @@ function Orbit(config) {
     if (!config.id) {
         throw new Error("no canvas id passed to Orbit");
     }
+    if (!config.speed) {
+        throw new Error("no orbit speed specified");
+    }
+    if (!config.size) {
+        config.size = [400, 400];
+    }
+
     _.extend(this, config);
 
     this.el = window.document.getElementById(config.id);
@@ -23,6 +31,7 @@ function Orbit(config) {
     this.el.height = this.size[1];
     this.el.style.position = "relative";
 
+    this.nodes = this.nodes || [];
     _.each(this.nodes, function createNodeIsolatedCanvas(node, key, arr) {
         // Initialize orbitter node core
         node.id = node.id || key;
@@ -61,7 +70,14 @@ Orbit.prototype.orbitAll = function() {
     });
 };
 
-
-module.exports = Orbit;
+// attach to window or export with commonJS
+exports.Orbit = Orbit;
+if (typeof module !== "undefined" && !mocha) {
+    module.exports = exports;
+} else if (typeof define === "function" && define.amd) {
+    define(exports);
+} else {
+    window.Orbit = Orbit;
+}
 
 })();
