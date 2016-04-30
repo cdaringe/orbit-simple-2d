@@ -53,11 +53,6 @@ beforeEach(function() {
 
 describe('orbit manager', function () {
 
-    it('should accept minimum config options', function () {
-        // (function(){ new Orbit() }).should.throw
-        // (function(){ new Orbit({id: 1}) }).should.be.ok
-    })
-
     it('should create a new canvas for each node', function() {
         orbitter.nodes.length.should.equal(2)
         orbitterDummy = new Orbit({id: 'orbitter', speed: 1})
