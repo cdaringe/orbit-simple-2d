@@ -3,8 +3,8 @@ var orbitter, orbitterDummy;
 
 beforeEach(function() {
     window.document
-        .querySelector('#test')
-        .innerHTML = '<canvas id="orbitter"></canvas>';
+    .querySelector('#test')
+    .innerHTML = '<canvas id="orbitter"></canvas>';
     orbitter = new Orbit({
         id: "orbitter",
         size: [400, 400],
