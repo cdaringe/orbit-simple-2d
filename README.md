@@ -95,17 +95,17 @@ setTimeout(function homeNodes(){
 
 ```
 
-## Build
-To build your own, consult `src/orbit-example.js`.  Use any normal commonJs build process you desire!  I have configured this repo to build using `grunt` and `grunt-watchify` (wrapped `browserify`).  If you just care to edit my orbit-example.js, run the following from the repo root:
+## build
+To build your own, consult `src/orbit-example.js`.  Use any normal commonjs build process you desire!  I have configured this repo to build using `grunt` and `grunt-watchify` (wrapped `browserify`).  If you just care to edit my orbit-example.js, run the following from the repo root:
 
 1. `npm i`
 1. `grunt`
 
 The final js is placed in `build/`.  Open the index.html file to preview.
 
-## ToDo
+## todo
 1. rather than refreshing at a fixed 50/60 Hz, self adjust per browser performance
 
-## Thanks
+## thanks
 
 1. handy gif tutorial: [Chris Messina](http://chrismessina.me/b/13913393/mov-to-gif)
