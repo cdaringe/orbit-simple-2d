@@ -13,18 +13,18 @@
   "author": "cdaringe",
   "license": "MIT",
   "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-cli": "^0.1.13",
-    "grunt-contrib-watch": "^0.6.1",
+    "grunt": "^1.0.1",
+    "grunt-cli": "^1.2.0",
+    "grunt-contrib-watch": "^1.0.0",
     "grunt-browserify": "*",
     "grunt-mocha": "*",
-    "mocha": "^2.1.0",
+    "mocha": "^4.1.0",
     "httpster": "^1.0.0",
-    "should": "^4.6.0"
+    "should": "^13.2.0"
   },
   "dependencies": {
     "domready": "^1.0.7",
-    "randomcolor": "^0.1.1",
+    "randomcolor": "^0.5.3",
     "underscore": "^1.7.0"
   }
 }
